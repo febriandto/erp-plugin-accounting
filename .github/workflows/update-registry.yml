@@ -1,0 +1,44 @@
+name: Update Registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plugin.json'
+
+jobs:
+  update-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout plugin repo
+        uses: actions/checkout@v4
+
+      - name: Read plugin.json
+        id: plugin
+        run: |
+          echo "version=$(jq -r .version plugin.json)" >> $GITHUB_OUTPUT
+          echo "slug=$(jq -r .slug plugin.json)" >> $GITHUB_OUTPUT
+
+      - name: Checkout registry repo
+        uses: actions/checkout@v4
+        with:
+          repository: febriandto/erp-plugin-registry
+          token: ${{ secrets.REGISTRY_TOKEN }}
+          path: registry
+
+      - name: Update version in registry.json
+        run: |
+          cd registry
+          jq --arg slug "${{ steps.plugin.outputs.slug }}" \
+             --arg version "${{ steps.plugin.outputs.version }}" \
+             '.plugins = [.plugins[] | if .slug == $slug then .version = $version else . end]' \
+             registry.json > tmp.json && mv tmp.json registry.json
+
+      - name: Push to registry
+        run: |
+          cd registry
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add registry.json
+          git diff --staged --quiet || git commit -m "update ${{ steps.plugin.outputs.slug }} to v${{ steps.plugin.outputs.version }}"
+          git push
