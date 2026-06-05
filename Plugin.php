@@ -17,11 +17,14 @@ class Plugin extends ServiceProvider
 
         // Daftarkan menu
         $this->app->make(MenuManager::class)->add([
-            'title'  => 'Accounting',
-            'url'    => route('accounting.invoices.index'),
-            'icon'   => 'ti ti-file-invoice',
-            'order'  => 20,
-            'active' => 'accounting*',
+            'title'    => 'Accounting',
+            'url'      => route('accounting.invoices.index'),
+            'icon'     => 'ti ti-file-invoice',
+            'order'    => 20,
+            'active'   => 'accounting*',
+            'children' => [
+                ['title' => 'Invoices', 'url' => route('accounting.invoices.index'), 'icon' => 'ti ti-file-invoice', 'active' => 'accounting/invoices*'],
+            ],
         ]);
     }
 }
