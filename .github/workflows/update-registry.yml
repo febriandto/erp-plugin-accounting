@@ -1,10 +1,8 @@
 name: Update Registry
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'plugin.json'
+  release:
+    types: [published]
 
 jobs:
   update-registry:
@@ -26,12 +24,14 @@ jobs:
           token: ${{ secrets.REGISTRY_TOKEN }}
           path: registry
 
-      - name: Update version in registry.json
+      - name: Update registry.json
         run: |
           cd registry
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/archive/refs/tags/${{ github.ref_name }}.zip"
           jq --arg slug "${{ steps.plugin.outputs.slug }}" \
              --arg version "${{ steps.plugin.outputs.version }}" \
-             '.plugins = [.plugins[] | if .slug == $slug then .version = $version else . end]' \
+             --arg url "$DOWNLOAD_URL" \
+             '.plugins = [.plugins[] | if .slug == $slug then .version = $version | .download_url = $url else . end]' \
              registry.json > tmp.json && mv tmp.json registry.json
 
       - name: Push to registry
