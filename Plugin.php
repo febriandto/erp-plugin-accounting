@@ -13,7 +13,7 @@ class Plugin extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/resources/views', 'accounting');
         $this->loadMigrationsFrom(__DIR__ . '/migrations');
 
-        Route::middleware('web')->group(__DIR__ . '/routes.php');
+        Route::middleware(['web', 'auth'])->group(__DIR__ . '/routes.php');
 
         // Daftarkan menu
         $this->app->make(MenuManager::class)->add([
