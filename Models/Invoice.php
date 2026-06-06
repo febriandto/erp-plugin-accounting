@@ -14,6 +14,9 @@ class Invoice extends Model
         'due_date',
         'status',
         'notes',
+        // Kolom integrasi: mencatat asal invoice (null = dibuat manual)
+        'source_type',
+        'source_id',
     ];
 
     protected $casts = [
@@ -29,5 +32,13 @@ class Invoice extends Model
     public function getTotalAttribute()
     {
         return $this->items->sum(fn($item) => $item->qty * $item->price);
+    }
+
+    /**
+     * Apakah invoice ini dibuat otomatis dari plugin lain (bukan manual)?
+     */
+    public function isFromIntegration(): bool
+    {
+        return ! is_null($this->source_type);
     }
 }

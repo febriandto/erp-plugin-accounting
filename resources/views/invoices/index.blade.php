@@ -5,17 +5,12 @@
 
 @section('page-actions')
 <a href="{{ route('accounting.invoices.create') }}" class="btn btn-primary">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="2" class="icon">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-        <path d="M12 5l0 14"/><path d="M5 12l14 0"/>
-    </svg>
-    Add Invoice
+    <i class="ti ti-plus me-1"></i>Add Invoice
 </a>
 @endsection
 
 @section('content')
-<div class="card">
+<div class="card anim-fadein">
     <div class="table-responsive">
         <table class="table table-vcenter card-table">
             <thead>
@@ -24,44 +19,64 @@
                     <th>Client</th>
                     <th>Issue Date</th>
                     <th>Due Date</th>
-                    <th>Total</th>
-                    <th>Status</th>
+                    <th class="text-end">Total</th>
+                    <th style="width:120px">Status</th>
                     <th class="w-1"></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="anim-stagger">
                 @forelse($invoices as $invoice)
+                @php
+                    [$badgeColor, $badgeIcon] = match($invoice->status) {
+                        'paid'    => ['success', 'ti-circle-check'],
+                        'sent'    => ['blue',    'ti-send'],
+                        'overdue' => ['danger',  'ti-alert-circle'],
+                        default   => ['secondary','ti-pencil'],
+                    };
+                    $isAp = $invoice->source_type === 'purchase_order';
+                @endphp
                 <tr>
-                    <td><a href="{{ route('accounting.invoices.show', $invoice) }}">{{ $invoice->invoice_number }}</a></td>
-                    <td>{{ $invoice->client_name }}</td>
-                    <td>{{ $invoice->issue_date->format('d M Y') }}</td>
-                    <td>{{ $invoice->due_date->format('d M Y') }}</td>
-                    <td>Rp {{ number_format($invoice->total, 0, ',', '.') }}</td>
                     <td>
-                        @php
-                            $badge = match($invoice->status) {
-                                'paid'    => 'bg-success',
-                                'sent'    => 'bg-info',
-                                'overdue' => 'bg-danger',
-                                default   => 'bg-secondary',
-                            };
-                        @endphp
-                        <span class="badge {{ $badge }}">{{ ucfirst($invoice->status) }}</span>
+                        <a href="{{ route('accounting.invoices.show', $invoice) }}"
+                           class="fw-medium text-decoration-none">
+                            {{ $invoice->invoice_number }}
+                        </a>
+                        @if($isAp)
+                        <span class="badge bg-purple-lt ms-1" title="Auto-generated dari Purchase Order">AP</span>
+                        @endif
+                    </td>
+                    <td>{{ $invoice->client_name }}</td>
+                    <td class="text-muted small">{{ $invoice->issue_date->format('d M Y') }}</td>
+                    <td class="text-muted small">
+                        {{ $invoice->due_date->format('d M Y') }}
+                        @if($invoice->status !== 'paid' && $invoice->due_date->isPast())
+                        <span class="text-danger small ms-1"><i class="ti ti-alert-triangle"></i></span>
+                        @endif
+                    </td>
+                    <td class="text-end fw-medium">
+                        Rp {{ number_format($invoice->total, 0, ',', '.') }}
+                    </td>
+                    <td>
+                        <span class="badge bg-{{ $badgeColor }}-lt text-{{ $badgeColor }}">
+                            <i class="ti {{ $badgeIcon }} me-1"></i>{{ ucfirst($invoice->status) }}
+                        </span>
                     </td>
                     <td>
                         <div class="dropdown">
-                            <button class="btn dropdown-toggle align-text-top" data-bs-toggle="dropdown">
-                                Actions
+                            <button class="btn btn-sm btn-ghost-secondary dropdown-toggle"
+                                    data-bs-toggle="dropdown">
+                                <i class="ti ti-dots-vertical"></i>
                             </button>
                             <div class="dropdown-menu dropdown-menu-end">
                                 <a class="dropdown-item" href="{{ route('accounting.invoices.show', $invoice) }}">
-                                    View
+                                    <i class="ti ti-eye me-2"></i>Lihat Detail
                                 </a>
-                                <form action="{{ route('accounting.invoices.destroy', $invoice) }}" method="POST">
+                                <div class="dropdown-divider"></div>
+                                <form action="{{ route('accounting.invoices.destroy', $invoice) }}" method="POST"
+                                      onsubmit="return confirm('Yakin hapus invoice ini?')">
                                     @csrf @method('DELETE')
-                                    <button class="dropdown-item text-danger" type="submit"
-                                        onclick="return confirm('Yakin hapus invoice ini?')">
-                                        Delete
+                                    <button class="dropdown-item text-danger" type="submit">
+                                        <i class="ti ti-trash me-2"></i>Hapus
                                     </button>
                                 </form>
                             </div>
@@ -70,14 +85,20 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-4">Belum ada invoice.</td>
+                    <td colspan="7" class="text-center text-muted py-5">
+                        <i class="ti ti-file-invoice mb-2" style="font-size:2rem;display:block"></i>
+                        Belum ada invoice.
+                    </td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
     @if($invoices->hasPages())
-    <div class="card-footer d-flex align-items-center">
+    <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="text-muted small">
+            Menampilkan {{ $invoices->firstItem() }}–{{ $invoices->lastItem() }} dari {{ $invoices->total() }} invoice
+        </div>
         {{ $invoices->links() }}
     </div>
     @endif

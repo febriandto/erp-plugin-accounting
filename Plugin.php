@@ -3,6 +3,7 @@
 namespace Plugins\accounting;
 
 use App\Core\MenuManager;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -10,12 +11,30 @@ class Plugin extends ServiceProvider
 {
     public function boot(): void
     {
+        $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
         $this->loadViewsFrom(__DIR__ . '/resources/views', 'accounting');
-        $this->loadMigrationsFrom(__DIR__ . '/migrations');
 
         Route::middleware(['web', 'auth'])->group(__DIR__ . '/routes.php');
 
         if (app()->runningInConsole()) return;
+
+        // ─── EVENT LISTENERS ──────────────────────────────────────────────────
+        //
+        // Accounting mendaftarkan listener ke event dari Purchasing.
+        // Logika sama: class_exists() sebagai guard — kalau Purchasing
+        // tidak diinstall, listener ini tidak akan pernah terdaftar.
+        //
+        // Ini berarti Accounting bisa berdiri sendiri tanpa Purchasing,
+        // tapi kalau keduanya aktif, integrasi berjalan otomatis.
+
+        if (class_exists(\Plugins\purchasing\Events\PurchaseOrderReceived::class)) {
+            Event::listen(
+                \Plugins\purchasing\Events\PurchaseOrderReceived::class,
+                \Plugins\accounting\Listeners\CreateApInvoiceFromPo::class
+            );
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
 
         $this->app->booted(function () {
             $this->app->make(MenuManager::class)->add([
