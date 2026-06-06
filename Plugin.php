@@ -15,7 +15,8 @@ class Plugin extends ServiceProvider
 
         Route::middleware(['web', 'auth'])->group(__DIR__ . '/routes.php');
 
-        // Daftarkan menu
+        if (app()->runningInConsole()) return;
+
         $this->app->make(MenuManager::class)->add([
             'title'    => 'Accounting',
             'url'      => route('accounting.invoices.index'),
