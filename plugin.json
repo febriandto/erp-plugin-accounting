@@ -4,5 +4,9 @@
     "version": "1.0.1",
     "description": "Modul invoice dan pembukuan",
     "author": "Kamu",
-    "depends": []
+    "depends": [],
+    "permissions": [
+        {"name": "accounting.view",   "label": "View Accounting"},
+        {"name": "accounting.manage", "label": "Manage Accounting"}
+    ]
 }

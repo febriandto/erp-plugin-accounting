@@ -19,13 +19,14 @@ class Plugin extends ServiceProvider
 
         $this->app->booted(function () {
             $this->app->make(MenuManager::class)->add([
-                'title'    => 'Accounting',
-                'url'      => route('accounting.invoices.index'),
-                'icon'     => 'ti ti-file-invoice',
-                'order'    => 20,
-                'active'   => 'accounting*',
-                'children' => [
-                    ['title' => 'Invoices', 'url' => route('accounting.invoices.index'), 'icon' => 'ti ti-file-invoice', 'active' => 'accounting/invoices*'],
+                'title'      => 'Accounting',
+                'url'        => route('accounting.invoices.index'),
+                'icon'       => 'ti ti-file-invoice',
+                'order'      => 20,
+                'active'     => 'accounting*',
+                'permission' => 'accounting.view',
+                'children'   => [
+                    ['title' => 'Invoices', 'url' => route('accounting.invoices.index'), 'icon' => 'ti ti-file-invoice', 'active' => 'accounting/invoices*', 'permission' => 'accounting.view'],
                 ],
             ]);
         });
