@@ -1,44 +1,23 @@
-name: Update Registry
+name: Publish to Registry
 
 on:
   release:
     types: [published]
 
 jobs:
-  update-registry:
+  publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout plugin repo
-        uses: actions/checkout@v4
-
-      - name: Read plugin.json
-        id: plugin
+      - name: Dispatch to ERP Registry
         run: |
-          echo "version=$(jq -r .version plugin.json)" >> $GITHUB_OUTPUT
-          echo "slug=$(jq -r .slug plugin.json)" >> $GITHUB_OUTPUT
-
-      - name: Checkout registry repo
-        uses: actions/checkout@v4
-        with:
-          repository: febriandto/erp-plugin-registry
-          token: ${{ secrets.REGISTRY_TOKEN }}
-          path: registry
-
-      - name: Update registry.json
-        run: |
-          cd registry
-          DOWNLOAD_URL="https://github.com/${{ github.repository }}/archive/refs/tags/${{ github.ref_name }}.zip"
-          jq --arg slug "${{ steps.plugin.outputs.slug }}" \
-             --arg version "${{ steps.plugin.outputs.version }}" \
-             --arg url "$DOWNLOAD_URL" \
-             '.plugins = [.plugins[] | if .slug == $slug then .version = $version | .download_url = $url else . end]' \
-             registry.json > tmp.json && mv tmp.json registry.json
-
-      - name: Push to registry
-        run: |
-          cd registry
-          git config user.email "actions@github.com"
-          git config user.name "GitHub Actions"
-          git add registry.json
-          git diff --staged --quiet || git commit -m "update ${{ steps.plugin.outputs.slug }} to v${{ steps.plugin.outputs.version }}"
-          git push
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.REGISTRY_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/febriandto/erp-plugin-registry/dispatches \
+            -d "{
+              \"event_type\": \"plugin-release\",
+              \"client_payload\": {
+                \"github_url\": \"https://github.com/${{ github.repository }}\",
+                \"download_url\": \"https://github.com/${{ github.repository }}/archive/refs/tags/${{ github.ref_name }}.zip\"
+              }
+            }"
