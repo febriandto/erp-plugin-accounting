@@ -17,15 +17,17 @@ class Plugin extends ServiceProvider
 
         if (app()->runningInConsole()) return;
 
-        $this->app->make(MenuManager::class)->add([
-            'title'    => 'Accounting',
-            'url'      => route('accounting.invoices.index'),
-            'icon'     => 'ti ti-file-invoice',
-            'order'    => 20,
-            'active'   => 'accounting*',
-            'children' => [
-                ['title' => 'Invoices', 'url' => route('accounting.invoices.index'), 'icon' => 'ti ti-file-invoice', 'active' => 'accounting/invoices*'],
-            ],
-        ]);
+        $this->app->booted(function () {
+            $this->app->make(MenuManager::class)->add([
+                'title'    => 'Accounting',
+                'url'      => route('accounting.invoices.index'),
+                'icon'     => 'ti ti-file-invoice',
+                'order'    => 20,
+                'active'   => 'accounting*',
+                'children' => [
+                    ['title' => 'Invoices', 'url' => route('accounting.invoices.index'), 'icon' => 'ti ti-file-invoice', 'active' => 'accounting/invoices*'],
+                ],
+            ]);
+        });
     }
 }
